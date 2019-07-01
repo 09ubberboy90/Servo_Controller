@@ -1,0 +1,6 @@
+Servo_Code/build/*
+Servo_Code/debug/*
+Servo_Code/dist/*
+Servo_Code/nbproject/*
+!Servo_Code/nbproject/Makefile-variables.mk
+!Servo_Code/nbproject/Makefile-impl.mk
