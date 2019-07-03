@@ -113,10 +113,6 @@ void Io_Listener()
             case 0x73: //s
                 Servo_Control();
                 break;
-
-            case 0x0D:
-            case 0x0A:
-                break;
             default:
                 Send_Message("ERROR main\n\r");
                 break;

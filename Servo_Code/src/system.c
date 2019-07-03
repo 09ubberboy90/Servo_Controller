@@ -119,8 +119,11 @@ void SYSTEM_Initialize( SYSTEM_STATE state )
 
 void Send_Message(char mess[])
 {
-    putrsUSBUSART(mess);
-    CDCTxService();
-    USBDeviceTasks();
+    if (message_display)
+    {
+        putrsUSBUSART(mess);
+        CDCTxService();
+    }
     return;
+
 }

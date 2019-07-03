@@ -15,11 +15,11 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
-    
+extern bool message_display;
 #define NB_OF_SERVO 6
 typedef struct {
     uint8_t nb_servo;
-    float time[10]; //MUST BE IN 0.1ms : 2ms is written as 20 ; 1.5ms is written as 15;
+    uint16_t time[10]; //MUST BE IN 0.1ms : 2ms is written as 20 ; 1.5ms is written as 15;
     PIN pin[10];
 }Servo_Pin_Control;
 

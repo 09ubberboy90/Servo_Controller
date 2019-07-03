@@ -30,6 +30,8 @@ please contact mla_licensing@microchip.com
 
 //#define BLUETOOTH_MODE
 #define USB_MODE
+
+bool message_display = true;
 /*** System States **************************************************/
 typedef enum
 {

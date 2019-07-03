@@ -20,8 +20,8 @@ extern "C" {
     STATE_OFF
 }STATE_MACHINE;
 
-#define PWM_MIN_TIME 25 // 2.5ms
-#define PWM_PERIOD 200 // 20ms
+#define PWM_MIN_TIME 3750 // 2.5ms
+#define PWM_PERIOD 30000 // 20ms
 // both value are based on the clock speed and the conversion from angle to time
 #define HARD_MULTIPLE 16.65
 #define HARD_SUM 750 //

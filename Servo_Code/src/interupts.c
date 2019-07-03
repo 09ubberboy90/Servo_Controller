@@ -11,6 +11,7 @@
 #include "interupts.h"
 #include "system.h"
 #include "servo.h"
+#include "usb_device.h"
 
 static char out;
 STATE_MACHINE state = STATE_OFF;
@@ -80,6 +81,10 @@ void Timer1_Init()
 //}
 void __interrupt(low_priority) ISR_Control() //Low priority interrupt
 {
+    if(PIE3bits.USBIE == 1 && PIR3bits.USBIF == 1)
+    {
+        USBDeviceTasks();
+    } 
     if (PIR1bits.TMR1IF == 1) // Set the period of pwm
     {
         Servo_Pin_Control *gesture = Get_Gesture();
@@ -87,7 +92,9 @@ void __interrupt(low_priority) ISR_Control() //Low priority interrupt
         {
         case STATE_ON:
             Pin_Off(gesture->pin[servo_id]);
-            tmp_time = PWM_MIN_TIME*150 - gesture->time[servo_id]*150;
+            //tmp_time = PWM_MIN_TIME*150 - (gesture->time[servo_id]*16.6+750);
+            tmp_time = PWM_MIN_TIME - gesture->time[servo_id];
+
             servo_id++;
             if (tmp_time>0) // if pin was needed to be on for less than what was supposed to wait
             {
@@ -103,7 +110,8 @@ void __interrupt(low_priority) ISR_Control() //Low priority interrupt
         case STATE_OFF: // If you're off then it means you can start a new led if there is one;
             if (servo_id < gesture->nb_servo)// if there's still some Led turn them on and restart the process
             {
-                tmp_time = gesture->time[servo_id]*150;
+                //tmp_time = (gesture->time[servo_id]*16.6+750);
+                tmp_time = gesture->time[servo_id];
                 TMR1 = 65535-(tmp_time);
 //                TMR1H = (tmp_time&0xFF00)>>8;
 //                TMR1L = (tmp_time&0x00FF);
@@ -115,7 +123,7 @@ void __interrupt(low_priority) ISR_Control() //Low priority interrupt
             //and wait for whatever amount of time is left
         case STATE_WAITING:
             tmp_time = PWM_PERIOD-gesture->nb_servo*PWM_MIN_TIME;
-            TMR1 = 65535-(tmp_time*150);
+            TMR1 = 65535-(tmp_time);
 
 //            TMR1H = (tmp_time&0xFF00)>>8;
 //            TMR1L = (tmp_time&0x00FF);
