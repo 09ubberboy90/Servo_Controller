@@ -16,7 +16,6 @@ static char out;
 STATE_MACHINE state = STATE_OFF;
 uint8_t servo_id = 0;
 uint16_t tmp_time = 0;
-uint16_t total_time = 0;
 void Interupt_Init()
 {
     INTCONbits.PEIE = 1; // enable peripheral interrupts
@@ -45,7 +44,7 @@ void Interupt_Init()
 void Timer1_Init()
 {
     T1CONbits.TMR1ON = 0; // stop the timer
-    T1CONbits.RD16 = 1; // timer configured as 16-bit
+    //T1CONbits.RD16 = 1; // timer configured as 16-bit
     T1CONbits.TMR1CS = 0; // use system clock
     T1CONbits.T1CKPS = 0b11;
     // prescaler 1:8
@@ -88,13 +87,13 @@ void __interrupt(low_priority) ISR_Control() //Low priority interrupt
         {
         case STATE_ON:
             Pin_Off(gesture->pin[servo_id]);
-            tmp_time = PWM_MIN_TIME - gesture->time[servo_id];
+            tmp_time = PWM_MIN_TIME*150 - gesture->time[servo_id]*150;
             servo_id++;
             if (tmp_time>0) // if pin was needed to be on for less than what was supposed to wait
             {
-                tmp_time = -tmp_time*150;
-                TMR1H = (tmp_time&0xFF00)>>8;
-                TMR1L = (tmp_time&0x00FF);
+                TMR1 = 65535-(tmp_time);
+//                TMR1H = (tmp_time&0xFF00)>>8;
+//                TMR1L = (tmp_time&0x00FF);
                 state = STATE_OFF;
                 break; 
             }
@@ -104,10 +103,10 @@ void __interrupt(low_priority) ISR_Control() //Low priority interrupt
         case STATE_OFF: // If you're off then it means you can start a new led if there is one;
             if (servo_id < gesture->nb_servo)// if there's still some Led turn them on and restart the process
             {
-                tmp_time = gesture->time[servo_id];
-                tmp_time = -tmp_time*150;
-                TMR1H = (tmp_time&0xFF00)>>8;
-                TMR1L = (tmp_time&0x00FF);
+                tmp_time = gesture->time[servo_id]*150;
+                TMR1 = 65535-(tmp_time);
+//                TMR1H = (tmp_time&0xFF00)>>8;
+//                TMR1L = (tmp_time&0x00FF);
                 Pin_On(gesture->pin[servo_id]);
                 state = STATE_ON;
                 break;
@@ -116,12 +115,12 @@ void __interrupt(low_priority) ISR_Control() //Low priority interrupt
             //and wait for whatever amount of time is left
         case STATE_WAITING:
             tmp_time = PWM_PERIOD-gesture->nb_servo*PWM_MIN_TIME;
-            tmp_time = -tmp_time*150;
-            TMR1H = (tmp_time&0xFF00)>>8;
-            TMR1L = (tmp_time&0x00FF);
+            TMR1 = 65535-(tmp_time*150);
+
+//            TMR1H = (tmp_time&0xFF00)>>8;
+//            TMR1L = (tmp_time&0x00FF);
 
             state = STATE_OFF;
-            total_time = 0;
             servo_id = 0;
             break;
         }

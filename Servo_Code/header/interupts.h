@@ -22,7 +22,9 @@ extern "C" {
 
 #define PWM_MIN_TIME 25 // 2.5ms
 #define PWM_PERIOD 200 // 20ms
-
+// both value are based on the clock speed and the conversion from angle to time
+#define HARD_MULTIPLE 16.65
+#define HARD_SUM 750 //
 void Interupt_Init(void);
 //void Timer0_Init(void);
 void Timer1_Init(void);

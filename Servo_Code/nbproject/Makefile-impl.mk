@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=ServoControl
+PROJECTNAME=Servo_Code
 
 # Active Configuration
 DEFAULTCONF=default

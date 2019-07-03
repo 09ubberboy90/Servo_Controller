@@ -121,5 +121,6 @@ void Send_Message(char mess[])
 {
     putrsUSBUSART(mess);
     CDCTxService();
+    USBDeviceTasks();
     return;
 }
