@@ -22,9 +22,10 @@ SOFTWARE.
 
 """
 
-import serial
 import sys
 import time
+import threading
+import serial
 
 class ServoController(object):
     """
@@ -43,48 +44,80 @@ class ServoController(object):
     def __init__(self, port: str, nb_servo: int, baudrate: int = 9600):
         self.port = port
         self.nb_servo = nb_servo
-        # default value of init for the servo in the PIC
-        # +1 since index 0 is unused and the first servo is servo 1
-        self.angles = [90]*(nb_servo+1)       
+        self.pin = {}
+        # default value of init for the servo in the PIC 
+        # * 12 since there is 12 available servo
+        self.angle = [90]*12       
+        self.messages = ""
+        self.previous_mess = ""
+        self.thread = threading.Thread(target=self.send_thread, daemon=True)
+        self.thread.start()
         try:
             self.ser = serial.Serial(self.port, baudrate, timeout=1)
         except serial.SerialException:
             print("SerialException : Invalid Serial name. Please input a valid name")
             sys.exit()
-        
+
+        for i in range(self.nb_servo+1):
+            self.pin[i] = i
+
         self.send("H")
         print(self.ser.readline()) # Acknowledge of the pic name
-        self.send("S") #Disable message from the PIC since it can cause error
-
+        self.send("SS") #Disable message from the PIC since it can cause error
     def send(self, mess):
         """
-        send a message to the PIC one letter at a time
+        Set the message to be sent in another thread
 
         Args:
 
             mess (string): the message you want to send
         """
+        self.messages = mess
 
-        for i in mess:
-            self.ser.write(i.encode())
-    
+
+    def rename_pin(self, old_pin: int, new_pin: int):
+        """
+        Change the pin id to which the program is going to send the command
+        Example : pin 3 is broken then reassign pin 3 to pin 12. but still refer to it as pin 12
+        
+        Args:
+            
+            old_pin (int): actual number the pin refers to
+
+
+            new_pin (int): new number the pin refers to
+        """
+
+        self.pin[old_pin] = new_pin
+
+    def send_thread(self):
+        """
+        send a message to the PIC one letter at a time in a non-blocking manner
+        """
+        while True:
+            if self.messages == self.previous_mess:
+                continue
+            for i in self.messages:
+                self.ser.write(i.encode())
+            self.previous_mess = self.messages
+
     def enable_servo(self):
         """
         Enable the servos
         """
-        self.send("D")
-        self.send("E")
+        self.send("SD")
+        self.send("SE")
 
 
     def disable_servo(self):
         """
         Disable the servos
         """
-        self.send("D")
-        self.send("V")
+        self.send("SD")
+        self.send("SV")
 
 
-    def set_angle(self, servo_id: int, angle: int, step: int, wait_time: int):
+    def set_angle(self, servo_id: int, angle: int, step: int, wait_time: int = 0.1):
         """
         Set the angle smoothly from the actual angle to a new one
         based on the step and the timeout in between
@@ -99,18 +132,18 @@ class ServoController(object):
 
             wait_time (int): How much time to wait in between command sending
         """
-        actual_angle = self.angles[servo_id]
+        actual_angle = self.angle[self.pin[servo_id]]
         interval = abs(actual_angle-angle)
         if actual_angle > angle:
             sign = -1
         else:
             sign = 1
 
-        for new_angle in range(0, interval, step):
+        for new_angle in range(step, interval+step, step):
             value = actual_angle+sign*new_angle
-            print("The servo is at angle: {:d}".format(value))
+            print("The servo {:d} is at angle: {:d}".format(servo_id, value))
             self.send("R{:02d}{:03d}".format(servo_id, value))
-            self.angles[servo_id] = new_angle
+            self.angle[self.pin[servo_id]] = new_angle
             time.sleep(wait_time)
 
     def set_angles(self, angles: list):
@@ -118,6 +151,7 @@ class ServoController(object):
         Set the angle for all the servo at the same time
         
         Args:
+
             angles (list): List of length nb_servo where elements are list of len 4:
             [[servo_id, angle, step, wait_time],....]
         """
@@ -125,7 +159,7 @@ class ServoController(object):
         if len(angles) < self.nb_servo:
             raise "Error too few element in the list"
         for angle in angles:
-            if len(angle) < 4:
+            if not (2 <= len(angle) <= 4):
                 raise "Error too few element in the sub array"
-            if self.angles[angle[0]] != angle[1]:
+            if self.angle[self.pin[angle[0]]] != angle[1]: # if the angle is different
                 self.set_angle(angle[0], angle[1], angle[2], angle[3])
