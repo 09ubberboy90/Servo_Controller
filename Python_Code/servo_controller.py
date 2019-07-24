@@ -105,7 +105,7 @@ class ServoController(object):
         """
         Enable the servos
         """
-        self.send("SD")
+        self.send("SS")
         self.send("SE")
 
 
